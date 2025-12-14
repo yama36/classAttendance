@@ -13,6 +13,7 @@ interface AttendanceContextType {
   setViewMode: (mode: ViewMode) => void;
   updateAttendance: (studentId: string, status: AttendanceStatus, date?: string) => void;
   importRoster: (classId: string, file: File) => Promise<void>;
+  deleteClass: (classId: string) => void;
   getCurrentClass: () => ClassData | undefined;
   setClasses: React.Dispatch<React.SetStateAction<ClassData[]>>;
 }
@@ -21,11 +22,27 @@ const AttendanceContext = createContext<AttendanceContextType | undefined>(undef
 
 export function AttendanceProvider({ children }: { children: React.ReactNode }) {
   const [classes, setClasses] = useState<ClassData[]>(initialClasses);
-  const [currentClassId, setCurrentClassId] = useState<string>(initialClasses[0].id);
+  const [currentClassId, setCurrentClassId] = useState<string>(initialClasses[0]?.id || '');
   const [currentDate, setCurrentDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [viewMode, setViewMode] = useState<ViewMode>('teacher');
 
   const getCurrentClass = () => classes.find(c => c.id === currentClassId);
+
+  const deleteClass = (classId: string) => {
+    // 現在選択中のクラスを削除する場合の処理
+    if (currentClassId === classId) {
+      // 削除後のリストを予測して次のIDを決定
+      // 注意: classes はレンダリング時点の値だが、イベントハンドラ内では通常最新
+      const nextClasses = classes.filter(c => c.id !== classId);
+      if (nextClasses.length > 0) {
+        setCurrentClassId(nextClasses[0].id);
+      } else {
+        setCurrentClassId('');
+      }
+    }
+
+    setClasses(prev => prev.filter(c => c.id !== classId));
+  };
 
   const updateAttendance = (studentId: string, status: AttendanceStatus, date: string = currentDate) => {
     setClasses(prevClasses => prevClasses.map(cls => {
@@ -68,6 +85,7 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
       setViewMode,
       updateAttendance,
       importRoster,
+      deleteClass,
       getCurrentClass,
       setClasses
     }}>

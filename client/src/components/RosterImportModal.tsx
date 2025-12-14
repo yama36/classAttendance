@@ -17,44 +17,78 @@ export function RosterImportModal({ open, onOpenChange }: RosterImportModalProps
   const handleImport = () => {
     if (!text.trim()) return;
 
-    // TSV/CSVデータの解析
-    // 想定フォーマット: 学年(またはクラス名の一部), クラス, 番号, 名前
-    // 例: 
-    // 1, A, 1, 田中
-    // 1, A, 2, 佐藤
-    // 1, B, 1, 鈴木
-    
     const rows = text.trim().split('\n');
+    console.log('Processing rows:', rows.length);
     const newClassesMap = new Map<string, ClassData>();
 
-    rows.forEach((row) => {
-      // カンマまたはタブで分割
-      const cells = row.split(/[\t,]/).map(c => c.trim());
+    rows.forEach((row, index) => {
+      // 空行をスキップ
+      if (!row.trim()) return;
+
+      // セル分割の試行（タブ優先 -> カンマ -> スペース）
+      let cells = row.split('\t').map(c => c.trim()).filter(Boolean);
       
-      // 最低限、名前があれば登録を試みるが、
-      // 学年・クラス・番号・名前 の4カラム、または クラス・番号・名前 の3カラムを想定
+      if (cells.length < 2 && row.includes(',')) {
+         cells = row.split(',').map(c => c.trim()).filter(Boolean);
+      }
+      
+      if (cells.length < 2) {
+         cells = row.split(/[\s]+/).map(c => c.trim()).filter(Boolean);
+      }
+
+      console.log(`Row ${index} cells:`, cells);
       
       let grade = '';
       let className = '';
       let numberStr = '';
-      let name = '';
+      // 名前情報の抽出
+      let namePart1 = ''; // 姓またはフルネーム
+      let namePart2 = ''; // 名（あれば）
 
-      if (cells.length >= 4) {
-        [grade, className, numberStr, name] = cells;
+      // カラム数に応じたマッピング
+      if (cells.length >= 5) {
+         // 学年, クラス, 番号, 姓, 名
+         [grade, className, numberStr, namePart1, namePart2] = cells;
+      } else if (cells.length === 4) {
+         // 学年, クラス, 番号, 名前
+         // ※ここで「クラス,番号,姓,名」の可能性もあるが、既存互換で「学年」優先
+         [grade, className, numberStr, namePart1] = cells;
       } else if (cells.length === 3) {
-        [className, numberStr, name] = cells;
+         // クラス, 番号, 名前 (学年なし)
+         [className, numberStr, namePart1] = cells;
       } else if (cells.length === 2) {
-        [numberStr, name] = cells;
-        className = 'A'; // デフォルト
+         // 番号, 名前 (クラス=A固定)
+         [numberStr, namePart1] = cells;
+         className = 'A'; 
       } else {
+        console.log(`Row ${index} skipped: not enough columns (${cells.length})`);
         return; // データ不足
       }
 
-      if (!name) return;
+      if (!namePart1) return;
 
-      // クラスIDの生成 (例: class-1-A)
+      // 姓・名の決定
+      let lastName = namePart1;
+      let firstName = namePart2;
+
+      // 名が空で、姓にスペースが含まれる場合は分割を試みる
+      if (!firstName && lastName.includes(' ')) {
+          // 全角スペースも考慮して分割
+          const parts = lastName.replace('　', ' ').split(' ');
+          if (parts.length >= 2) {
+              lastName = parts[0];
+              firstName = parts.slice(1).join(' '); // 残りを名とする
+          }
+      }
+
+      // フルネーム（互換性用）
+      const fullName = firstName ? `${lastName} ${firstName}` : lastName;
+
+      // クラスIDの生成
       const fullClassName = grade ? `${grade}年${className}組` : `${className}組`;
-      const classId = `class-${grade}-${className}`;
+      const classId = grade 
+        ? `class-${grade}-${className}` 
+        : `class-${className}`;
 
       if (!newClassesMap.has(classId)) {
         newClassesMap.set(classId, {
@@ -65,12 +99,17 @@ export function RosterImportModal({ open, onOpenChange }: RosterImportModalProps
       }
 
       const classData = newClassesMap.get(classId)!;
-      const number = parseInt(numberStr) || classData.students.length + 1;
+      let number = parseInt(numberStr);
+      if (isNaN(number)) {
+          number = classData.students.length + 1;
+      }
 
       classData.students.push({
         id: `student-${classId}-${number}`,
         number: number,
-        name: name,
+        name: fullName,
+        lastName: lastName,
+        firstName: firstName,
         records: []
       });
     });
@@ -82,15 +121,24 @@ export function RosterImportModal({ open, onOpenChange }: RosterImportModalProps
 
     if (newClassesMap.size > 0) {
       const newClasses = Array.from(newClassesMap.values());
-      setClasses(newClasses);
       
-      // 最初のクラスを選択状態にする
+      setClasses(prevClasses => {
+        const mergedClassesMap = new Map(prevClasses.map(c => [c.id, c]));
+        newClasses.forEach(newClass => {
+          mergedClassesMap.set(newClass.id, newClass);
+        });
+        return Array.from(mergedClassesMap.values());
+      });
+      
       if (newClasses.length > 0) {
         setCurrentClassId(newClasses[0].id);
       }
       
       onOpenChange(false);
       setText('');
+      alert(`${newClasses.length}クラス、合計${Array.from(newClassesMap.values()).reduce((acc, cls) => acc + cls.students.length, 0)}人の生徒を登録しました。`);
+    } else {
+      alert('有効なデータが見つかりませんでした。区切り文字（タブやカンマ）やフォーマットを確認してください。\n例: 学年[タブ]クラス[タブ]番号[タブ]姓[タブ]名');
     }
   };
 
@@ -100,17 +148,17 @@ export function RosterImportModal({ open, onOpenChange }: RosterImportModalProps
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-[#4A4A4A]">名簿の一括登録</DialogTitle>
           <DialogDescription className="text-[#6B7F56]">
-            Excelなどから「学年」「クラス」「番号」「名前」の列をコピーして貼り付けてください。<br/>
+            Excelなどからデータをコピーして貼り付けてください。<br/>
+            推奨形式: 「学年」「クラス」「番号」「姓」「名」(5列)<br/>
             ※座席配置は番号順に初期化されます。後で変更可能です。
           </DialogDescription>
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
           <div className="text-xs text-slate-500 bg-white/50 p-2 rounded border border-[#C4A484] font-mono">
-            例：<br/>
-            1	A	1	田中 太郎<br/>
-            1	A	2	佐藤 花子<br/>
-            1	B	1	鈴木 一郎
+            例1 (5列)：1[TAB]A[TAB]1[TAB]田中[TAB]太郎<br/>
+            例2 (4列)：1[TAB]A[TAB]1[TAB]田中 太郎 (スペース区切り自動分割)<br/>
+            例3 (3列)：A[TAB]1[TAB]佐藤 花子
           </div>
           <Textarea
             placeholder="ここに貼り付け..."

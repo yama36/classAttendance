@@ -9,6 +9,8 @@ export interface Student {
   id: string;
   number: number;
   name: string;
+  lastName?: string; // 姓
+  firstName?: string; // 名
   records: AttendanceRecord[];
 }
 

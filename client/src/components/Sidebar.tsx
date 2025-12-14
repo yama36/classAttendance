@@ -4,10 +4,12 @@ import { cn, getStatusLabel } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { RosterImportModal } from './RosterImportModal';
+import { ClassManagerModal } from './ClassManagerModal';
 
 export function Sidebar() {
   const { getCurrentClass, currentDate, classes, currentClassId, setCurrentClassId, viewMode, setViewMode } = useAttendance();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isManagerModalOpen, setIsManagerModalOpen] = useState(false);
   const currentClass = getCurrentClass();
 
   if (!currentClass) return null;
@@ -34,7 +36,17 @@ export function Sidebar() {
         
         <div className="space-y-4 relative z-10">
           <div>
-            <label className="block text-sm font-bold mb-1 opacity-80">クラス</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-bold opacity-80">クラス</label>
+              {viewMode === 'teacher' && (
+                <button 
+                  onClick={() => setIsManagerModalOpen(true)}
+                  className="text-xs text-white/80 hover:text-white underline"
+                >
+                  管理
+                </button>
+              )}
+            </div>
             <select 
               value={currentClassId}
               onChange={(e) => setCurrentClassId(e.target.value)}
@@ -114,6 +126,7 @@ export function Sidebar() {
       </div>
 
       <RosterImportModal open={isImportModalOpen} onOpenChange={setIsImportModalOpen} />
+      <ClassManagerModal open={isManagerModalOpen} onOpenChange={setIsManagerModalOpen} />
     </div>
   );
 }

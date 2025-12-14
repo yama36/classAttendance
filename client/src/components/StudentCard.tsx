@@ -6,15 +6,16 @@ interface StudentCardProps {
   id: string;
   number: number;
   name: string;
+  lastName?: string;
   status: AttendanceStatus;
   editMode: boolean;
   onClick?: () => void;
 }
 
-export function StudentCard({ id, number, name, status, editMode, onClick }: StudentCardProps) {
+export function StudentCard({ id, number, name, lastName, status, editMode, onClick }: StudentCardProps) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: id,
-    data: { id, number, name, status },
+    data: { id, number, name, lastName, status },
     disabled: !editMode,
   });
 
@@ -45,6 +46,9 @@ export function StudentCard({ id, number, name, status, editMode, onClick }: Stu
     }
   };
 
+  // 姓の決定（lastNameがなければnameから推測、スペース区切り）
+  const familyName = lastName || name.split(/[\s　]+/)[0];
+
   return (
     <div
       ref={setNodeRef}
@@ -60,7 +64,6 @@ export function StudentCard({ id, number, name, status, editMode, onClick }: Stu
       )}
     >
       {/* 椅子 (机の下にしまわれている状態) - 机の後ろ（レイヤー的に下）に配置 */}
-      {/* 黒板が「上」にあると仮定し、椅子は「下（手前）」にあるが、机にしまわれているので背もたれが少し見える状態 */}
       <div className="absolute bottom-0 w-3/4 h-4 bg-[#8B5E3C] rounded-t-md transform translate-y-1/2 z-0 shadow-sm"></div>
 
       {/* 机本体 */}
@@ -73,7 +76,10 @@ export function StudentCard({ id, number, name, status, editMode, onClick }: Stu
 
         {/* 名前表示 */}
         <div className="mt-4 text-white font-bold text-lg tracking-wider drop-shadow-md px-1 text-center leading-tight">
-          {name}
+          {/* SP: 番号.姓 */}
+          <span className="md:hidden">{number}.{familyName}</span>
+          {/* PC: 番号.フルネーム */}
+          <span className="hidden md:inline">{number}.{name}</span>
         </div>
 
         {/* ステータス表示（大きく見やすく） */}

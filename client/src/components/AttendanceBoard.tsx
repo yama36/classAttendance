@@ -6,6 +6,11 @@ import { DropZone } from './DropZone';
 import { AttendanceStatus } from '@/types';
 import { cn } from '@/lib/utils';
 
+// グリッド設定定数
+const FIXED_COLS = 6;
+const MIN_CARD_WIDTH = 120;
+const MIN_CARD_HEIGHT = 90;
+
 export function AttendanceBoard() {
   const { getCurrentClass, currentDate, updateAttendance, viewMode } = useAttendance();
   const currentClass = getCurrentClass();
@@ -19,16 +24,9 @@ export function AttendanceBoard() {
 
   const gridStyle = useMemo(() => {
     const count = currentClass?.students.length || 0;
-    const FIXED_COLS = 6;
-    // 最小サイズ設定
-    const MIN_CARD_WIDTH = 120;
-    const MIN_CARD_HEIGHT = 90;
-
     const rows = Math.ceil(count / FIXED_COLS);
 
-    // CSS Gridのminmax関数を使用することで、
-    // 1. スペースがある場合 -> 1fr で均等に広がる
-    // 2. スペースがない場合 -> MIN_CARD_SIZE で固定され、親コンテナでスクロールする
+    // CSS Gridのminmax関数を使用
     return {
       templateCols: `repeat(${FIXED_COLS}, minmax(${MIN_CARD_WIDTH}px, 1fr))`,
       templateRows: `repeat(${rows}, minmax(${MIN_CARD_HEIGHT}px, 1fr))`,
@@ -120,7 +118,7 @@ export function AttendanceBoard() {
           {/* グリッドコンテナ */}
           <div 
             className={cn(
-              "grid gap-4 h-full", // w-fullは自動
+              "grid gap-4 h-full", 
               viewMode === 'student' ? "rotate-180" : ""
             )}
             style={{
@@ -134,6 +132,7 @@ export function AttendanceBoard() {
                 id={student.id}
                 number={student.number}
                 name={student.name}
+                lastName={student.lastName} // 追加
                 status={getStudentStatus(student.id)}
                 editMode={viewMode === 'teacher'}
                 onClick={() => handleCardClick(student.id, getStudentStatus(student.id))}
@@ -148,7 +147,7 @@ export function AttendanceBoard() {
           <div 
             className="opacity-90 rotate-3 scale-105" 
             style={{ 
-              width: `${MIN_CARD_WIDTH}px`, // DragOverlayは固定サイズまたは適当なサイズで表示
+              width: `${MIN_CARD_WIDTH}px`,
               height: `${MIN_CARD_HEIGHT}px`
             }}
           >
@@ -156,6 +155,7 @@ export function AttendanceBoard() {
               id={activeId}
               number={activeData.number}
               name={activeData.name}
+              lastName={activeData.lastName} // 追加
               status={activeData.status}
               editMode={true}
             />
@@ -165,6 +165,3 @@ export function AttendanceBoard() {
     </DndContext>
   );
 }
-// 定数を参照できるように関数内で定義したが、DragOverlay用に関数外で定義するか、変数を使う
-const MIN_CARD_WIDTH = 120;
-const MIN_CARD_HEIGHT = 90;
