@@ -1,4 +1,3 @@
-import { useDraggable } from '@dnd-kit/core';
 import { cn, getStatusLabel } from '@/lib/utils';
 import { AttendanceStatus } from '@/types';
 
@@ -13,16 +12,6 @@ interface StudentCardProps {
 }
 
 export function StudentCard({ id, number, name, lastName, status, editMode, onClick }: StudentCardProps) {
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id: id,
-    data: { id, number, name, lastName, status },
-    disabled: !editMode,
-  });
-
-  const style = transform ? {
-    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-    zIndex: 50,
-  } : undefined;
 
   // ステータスに応じた机の色設定
   const getDeskColor = (status: AttendanceStatus) => {
@@ -51,15 +40,11 @@ export function StudentCard({ id, number, name, lastName, status, editMode, onCl
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      {...listeners}
-      {...attributes}
       onClick={onClick}
       className={cn(
         "relative flex flex-col items-center justify-center rounded-sm transition-all duration-200 select-none",
         "w-full h-full", // 親グリッドセルいっぱいに広げる
-        editMode ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
+        editMode ? "cursor-pointer hover:scale-105" : "cursor-default",
         "group"
       )}
     >
