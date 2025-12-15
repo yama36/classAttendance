@@ -78,16 +78,6 @@ export default function Home() {
           </div>
         </main>
 
-        {/* Footer decoration */}
-        <div className="h-12 bg-[#6B7F56] flex items-center justify-center gap-8 overflow-hidden opacity-50 shrink-0">
-          {/* Chalk lines */}
-          <div className="w-16 h-1 bg-white/60 rounded-full transform rotate-1"></div>
-          <div className="w-16 h-1 bg-white/60 rounded-full transform -rotate-1"></div>
-          <div className="w-4 h-4 bg-white/60 clip-path-triangle"></div>
-          <div className="w-16 h-1 bg-white/60 rounded-full transform rotate-1"></div>
-          <div className="w-4 h-4 bg-white/60 clip-path-triangle transform rotate-180"></div>
-          <div className="w-16 h-1 bg-white/60 rounded-full transform -rotate-1"></div>
-        </div>
       </div>
     </AttendanceProvider>
   );
