@@ -48,32 +48,37 @@ export function StudentCard({ id, number, name, lastName, status, editMode, onCl
         "group"
       )}
     >
-      {/* 椅子 (机の下にしまわれている状態) - 机の後ろ（レイヤー的に下）に配置 */}
-      <div className="absolute bottom-0 w-3/4 h-4 bg-[#8B5E3C] rounded-t-md transform translate-y-1/2 z-0 shadow-sm"></div>
+      {/* 椅子 (机の上側=奥側に配置) */}
+      <div className="absolute top-0 w-3/4 h-4 bg-[#8B5E3C] rounded-b-md transform -translate-y-1/2 z-0 shadow-sm"></div>
 
       {/* 机本体 */}
       <div className={cn(
-        "relative w-full h-full rounded-sm shadow-md flex flex-col items-center justify-center z-10 overflow-hidden border-b-4 border-black/10",
+        "relative w-full h-full rounded-sm shadow-md flex flex-col items-center justify-between z-10 overflow-hidden border-b-4 border-black/10 py-2",
         getDeskColor(status)
       )}>
-        {/* 机のディテール：上部の溝（ペントレイ） */}
-        <div className="absolute top-3 w-1/2 h-1.5 bg-black/10 rounded-full"></div>
-
-        {/* 名前表示 */}
-        <div className="mt-4 text-white font-bold text-lg tracking-wider drop-shadow-md px-1 text-center leading-tight">
-          {/* SP: 番号.姓 */}
-          <span className="md:hidden">{number}.{familyName}</span>
-          {/* PC: 番号.フルネーム */}
-          <span className="hidden md:inline">{number}.{name}</span>
+        
+        {/* 上部余白と名前 */}
+        <div className="flex-1 flex items-center justify-center w-full px-1">
+          <div className="text-white font-bold text-lg tracking-wider drop-shadow-md text-center leading-tight w-full truncate">
+            {/* SP: 番号.姓 */}
+            <span className="md:hidden">{number}.{familyName}</span>
+            {/* PC: 番号.フルネーム */}
+            <span className="hidden md:inline">{number}.{name}</span>
+          </div>
         </div>
 
-        {/* ステータス表示（大きく見やすく） */}
-        <div className={cn(
-          "mt-1 px-3 py-1 rounded-full text-sm font-bold text-white shadow-sm tracking-widest transform rotate-[-2deg]",
-          getLabelColor(status)
-        )}>
-          {getStatusLabel(status)}
+        {/* ステータス表示（中央下） */}
+        <div className="mb-2">
+          <div className={cn(
+            "px-2 py-0.5 rounded-full text-xs font-bold text-white shadow-sm tracking-widest transform rotate-[-2deg]",
+            getLabelColor(status)
+          )}>
+            {getStatusLabel(status)}
+          </div>
         </div>
+
+        {/* 机のディテール：下部の溝（ペントレイ） */}
+        <div className="w-1/2 h-1.5 bg-black/10 rounded-full mb-1"></div>
       </div>
     </div>
   );
