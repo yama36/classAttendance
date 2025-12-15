@@ -85,20 +85,20 @@ export function AttendanceBoard() {
 
       <div className={cn(
         "flex-1 bg-white rounded-sm p-6 shadow-md relative transition-all duration-500 overflow-auto",
-        viewMode === 'student' ? "rotate-180" : ""
+        viewMode === 'teacher' ? "rotate-180" : ""
       )}>
         {/* グリッドコンテナ */}
         <div 
           className={cn(
             "grid gap-4 h-full", 
-            viewMode === 'student' ? "rotate-180" : ""
+            viewMode === 'teacher' ? "rotate-180" : ""
           )}
           style={{
             gridTemplateColumns: gridStyle.templateCols,
             gridTemplateRows: gridStyle.templateRows,
           }}
         >
-          {currentClass.students.map((student) => (
+          {(viewMode === 'teacher' ? currentClass.students.slice().reverse() : currentClass.students).map((student) => (
             <StudentCard
               key={student.id}
               id={student.id}
