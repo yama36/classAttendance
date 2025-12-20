@@ -9,9 +9,10 @@ interface StudentCardProps {
   status: AttendanceStatus;
   editMode: boolean;
   onClick?: () => void;
+  style?: React.CSSProperties;
 }
 
-export function StudentCard({ id, number, name, lastName, status, editMode, onClick }: StudentCardProps) {
+export function StudentCard({ id, number, name, lastName, status, editMode, onClick, style }: StudentCardProps) {
 
   // ステータスに応じた机の色設定
   const getDeskColor = (status: AttendanceStatus) => {
@@ -47,6 +48,7 @@ export function StudentCard({ id, number, name, lastName, status, editMode, onCl
         editMode ? "cursor-pointer hover:scale-105" : "cursor-default",
         "group"
       )}
+      style={{ direction: 'ltr', ...style }}
     >
       {/* 椅子 (机の上側=奥側に配置) */}
       <div className="absolute top-0 w-3/4 h-4 bg-[#8B5E3C] rounded-b-md transform -translate-y-1/2 z-0 shadow-sm"></div>
@@ -70,7 +72,7 @@ export function StudentCard({ id, number, name, lastName, status, editMode, onCl
         {/* ステータス表示（中央下） */}
         <div className="mb-2">
           <div className={cn(
-            "px-2 py-0.5 rounded-full text-xs font-bold text-white shadow-sm tracking-widest transform rotate-[-2deg]",
+            "px-2 py-0.5 rounded-full text-md font-bold text-white shadow-sm tracking-widest transform rotate-[-2deg]",
             getLabelColor(status)
           )}>
             {getStatusLabel(status)}

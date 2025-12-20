@@ -98,18 +98,62 @@ export function AttendanceBoard() {
             gridTemplateRows: gridStyle.templateRows,
           }}
         >
-          {(viewMode === 'teacher' ? currentClass.students.slice().reverse() : currentClass.students).map((student) => (
-            <StudentCard
-              key={student.id}
-              id={student.id}
-              number={student.number}
-              name={student.name}
-              lastName={student.lastName}
-              status={getStudentStatus(student.id)}
-              editMode={viewMode === 'teacher'}
-              onClick={() => handleCardClick(student.id, getStudentStatus(student.id))}
-            />
-          ))}
+          {(() => {
+            if (viewMode === 'teacher') {
+              // 教師モード: 右下から左に向かって配置
+              // スプレッドシートの関数: INDEX($A$1:$F$7, 8-ROW(A1), 7-COLUMN(A1))
+              // 1. 学生リストを行ごとに分割（正順）: [[1,2,3,4,5,6], [7,8,9,10,11,12], ...]
+              // 2. 各行を逆順にする（列を逆順）: [[6,5,4,3,2,1], [12,11,10,9,8,7], ...]
+              // 3. 行の順序を逆順にする（下から上）: [[40,39,38,37], [36,35,34,33,32,31], ...]
+              // 4. フラット化して、グリッドに配置（direction: rtlなしで直接配置）
+              const rows: typeof currentClass.students[] = [];
+              for (let i = 0; i < currentClass.students.length; i += FIXED_COLS) {
+                rows.push(currentClass.students.slice(i, i + FIXED_COLS));
+              }
+              // 各行を逆順にして、行の順序も逆順にする
+              const reversedRows = rows.map(row => row.slice().reverse()).reverse();
+              // グリッドの位置を直接計算して配置（右から左、下から上）
+              const totalRows = gridStyle.rows;
+              return reversedRows.flatMap((row, rowIndex) => {
+                // rowIndexは逆順の行インデックス（0が最下行）
+                const actualRow = totalRows - rowIndex; // 実際の行番号（下から上）
+                return row.map((student, colIndex) => {
+                  // colIndexは逆順の列インデックス（0が右端）
+                  const actualCol = FIXED_COLS - colIndex; // 実際の列番号（右から左）
+                  return (
+                    <StudentCard
+                      key={student.id}
+                      id={student.id}
+                      number={student.number}
+                      name={student.name}
+                      lastName={student.lastName}
+                      status={getStudentStatus(student.id)}
+                      editMode={true}
+                      onClick={() => handleCardClick(student.id, getStudentStatus(student.id))}
+                      style={{
+                        gridRow: actualRow,
+                        gridColumn: actualCol,
+                      }}
+                    />
+                  );
+                });
+              });
+            }
+            
+            // 生徒モード: 正順で表示（左上から）
+            return currentClass.students.map((student) => (
+              <StudentCard
+                key={student.id}
+                id={student.id}
+                number={student.number}
+                name={student.name}
+                lastName={student.lastName}
+                status={getStudentStatus(student.id)}
+                editMode={false}
+                onClick={() => handleCardClick(student.id, getStudentStatus(student.id))}
+              />
+            ));
+          })()}
         </div>
       </div>
     </div>
