@@ -12,7 +12,7 @@ const MIN_CARD_WIDTH = 120;
 const MIN_CARD_HEIGHT = 90;
 
 export function AttendanceBoard() {
-  const { getCurrentClass, currentDate, updateAttendance, viewMode } = useAttendance();
+  const { getCurrentClass, currentDate, updateAttendance } = useAttendance();
   const currentClass = getCurrentClass();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeData, setActiveData] = useState<any>(null);
@@ -57,8 +57,6 @@ export function AttendanceBoard() {
   };
 
   const handleCardClick = (studentId: string, currentStatus: AttendanceStatus) => {
-    if (viewMode === 'student') return;
-    
     const statuses: AttendanceStatus[] = ['present', 'absent', 'late', 'leaveEarly'];
     const currentIndex = statuses.indexOf(currentStatus);
     const nextStatus = statuses[(currentIndex + 1) % statuses.length];
@@ -79,62 +77,62 @@ export function AttendanceBoard() {
     leaveEarly: currentClass.students.filter(s => getStudentStatus(s.id) === 'leaveEarly').length,
   };
 
+  // 教師視点（右下起点）にするため、データを逆順にする
+  // [...array].reverse() で元の配列を変更せずにコピーを逆順にする
+  const reversedStudents = [...currentClass.students].reverse();
+
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="flex flex-col h-full gap-6 font-['Yomogi']">
-        {viewMode === 'teacher' && (
-          <div className="grid grid-cols-4 gap-4 shrink-0">
-            <DropZone 
-              id="present" 
-              label="出席" 
-              count={counts.present}
-              colorClass=""
-            />
-            <DropZone 
-              id="absent" 
-              label="欠席" 
-              count={counts.absent}
-              colorClass=""
-            />
-            <DropZone 
-              id="late" 
-              label="遅刻" 
-              count={counts.late}
-              colorClass=""
-            />
-            <DropZone 
-              id="leaveEarly" 
-              label="早退" 
-              count={counts.leaveEarly}
-              colorClass=""
-            />
-          </div>
-        )}
+        <div className="grid grid-cols-4 gap-4 shrink-0">
+          <DropZone 
+            id="present" 
+            label="出席" 
+            count={counts.present}
+            colorClass=""
+          />
+          <DropZone 
+            id="absent" 
+            label="欠席" 
+            count={counts.absent}
+            colorClass=""
+          />
+          <DropZone 
+            id="late" 
+            label="遅刻" 
+            count={counts.late}
+            colorClass=""
+          />
+          <DropZone 
+            id="leaveEarly" 
+            label="早退" 
+            count={counts.leaveEarly}
+            colorClass=""
+          />
+        </div>
 
         <div className={cn(
-          "flex-1 bg-white rounded-sm p-6 shadow-md relative transition-all duration-500 overflow-auto",
-          viewMode === 'teacher' ? "rotate-180" : ""
+          "flex-1 bg-white rounded-sm p-6 shadow-md relative transition-all duration-500 overflow-auto"
         )}>
           {/* グリッドコンテナ */}
           <div 
             className={cn(
-              "grid gap-4 h-full", 
-              viewMode === 'teacher' ? "rotate-180" : ""
+              "grid gap-4 h-full"
             )}
             style={{
               gridTemplateColumns: gridStyle.templateCols,
               gridTemplateRows: gridStyle.templateRows,
             }}
           >
-            {currentClass.students.map((student) => (
+            {reversedStudents.map((student) => (
               <StudentCard
                 key={student.id}
                 id={student.id}
                 number={student.number}
                 name={student.name}
-                lastName={student.lastName} // 追加
+                lastName={student.lastName}
                 status={getStudentStatus(student.id)}
-                editMode={viewMode === 'teacher'}
+                editMode={true}
                 onClick={() => handleCardClick(student.id, getStudentStatus(student.id))}
               />
             ))}
@@ -155,7 +153,7 @@ export function AttendanceBoard() {
               id={activeId}
               number={activeData.number}
               name={activeData.name}
-              lastName={activeData.lastName} // 追加
+              lastName={activeData.lastName}
               status={activeData.status}
               editMode={true}
             />

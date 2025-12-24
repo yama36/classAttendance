@@ -7,7 +7,7 @@ import { RosterImportModal } from './RosterImportModal';
 import { ClassManagerModal } from './ClassManagerModal';
 
 export function Sidebar() {
-  const { getCurrentClass, currentDate, classes, currentClassId, setCurrentClassId, viewMode, setViewMode } = useAttendance();
+  const { getCurrentClass, currentDate, classes, currentClassId, setCurrentClassId } = useAttendance();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isManagerModalOpen, setIsManagerModalOpen] = useState(false);
   const currentClass = getCurrentClass();
@@ -38,14 +38,12 @@ export function Sidebar() {
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="block text-sm font-bold opacity-80">クラス</label>
-              {viewMode === 'teacher' && (
-                <button 
-                  onClick={() => setIsManagerModalOpen(true)}
-                  className="text-xs text-white/80 hover:text-white underline"
-                >
-                  管理
-                </button>
-              )}
+              <button 
+                onClick={() => setIsManagerModalOpen(true)}
+                className="text-xs text-white/80 hover:text-white underline"
+              >
+                管理
+              </button>
             </div>
             <select 
               value={currentClassId}
@@ -61,25 +59,11 @@ export function Sidebar() {
 
           <div className="pt-4 space-y-2">
             <button
-              onClick={() => setViewMode(viewMode === 'teacher' ? 'student' : 'teacher')}
-              className={cn(
-                "w-full py-2 px-4 rounded-sm font-bold transition-all transform hover:-translate-y-0.5 active:translate-y-0",
-                viewMode === 'teacher' 
-                  ? "bg-white text-[#6B7F56] shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]" 
-                  : "bg-[#94C9C3] text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]"
-              )}
+              onClick={() => setIsImportModalOpen(true)}
+              className="w-full py-2 px-4 rounded-sm font-bold bg-[#C4A484] text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] hover:bg-[#B09070] transition-colors text-sm"
             >
-              {viewMode === 'teacher' ? '生徒モード' : '教師モード'}
+              名簿・座席を一括登録
             </button>
-
-            {viewMode === 'teacher' && (
-              <button
-                onClick={() => setIsImportModalOpen(true)}
-                className="w-full py-2 px-4 rounded-sm font-bold bg-[#C4A484] text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] hover:bg-[#B09070] transition-colors text-sm"
-              >
-                名簿・座席を一括登録
-              </button>
-            )}
           </div>
         </div>
       </div>

@@ -9,8 +9,6 @@ interface AttendanceContextType {
   setCurrentClassId: (id: string) => void;
   currentDate: string;
   setCurrentDate: (date: string) => void;
-  viewMode: ViewMode;
-  setViewMode: (mode: ViewMode) => void;
   updateAttendance: (studentId: string, status: AttendanceStatus, date?: string) => void;
   importRoster: (classId: string, file: File) => Promise<void>;
   deleteClass: (classId: string) => void;
@@ -24,7 +22,6 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
   const [classes, setClasses] = useState<ClassData[]>(initialClasses);
   const [currentClassId, setCurrentClassId] = useState<string>(initialClasses[0]?.id || '');
   const [currentDate, setCurrentDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
-  const [viewMode, setViewMode] = useState<ViewMode>('teacher');
 
   const getCurrentClass = () => classes.find(c => c.id === currentClassId);
 
@@ -81,8 +78,6 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
       setCurrentClassId,
       currentDate,
       setCurrentDate,
-      viewMode,
-      setViewMode,
       updateAttendance,
       importRoster,
       deleteClass,
