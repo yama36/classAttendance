@@ -12,6 +12,7 @@ interface AttendanceContextType {
   updateAttendance: (studentId: string, status: AttendanceStatus, date?: string) => void;
   importRoster: (classId: string, file: File) => Promise<void>;
   deleteClass: (classId: string) => void;
+  updateClassStudentsOrder: (classId: string, orderedStudentIds: string[]) => void;
   getCurrentClass: () => ClassData | undefined;
   setClasses: React.Dispatch<React.SetStateAction<ClassData[]>>;
 }
@@ -39,6 +40,29 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
     }
 
     setClasses(prev => prev.filter(c => c.id !== classId));
+  };
+
+  const updateClassStudentsOrder = (classId: string, orderedStudentIds: string[]) => {
+    setClasses(prevClasses => prevClasses.map(cls => {
+      if (cls.id !== classId) return cls;
+
+      // 現在の学生リスト
+      const currentStudents = [...cls.students];
+      
+      // 新しい順序で学生リストを再構築
+      const newStudents = orderedStudentIds
+        .map(id => currentStudents.find(s => s.id === id))
+        .filter((s): s is NonNullable<typeof s> => s !== undefined);
+      
+      // 未割り当ての学生（もし存在すれば）を末尾に追加
+      const assignedIds = new Set(orderedStudentIds);
+      const remainingStudents = currentStudents.filter(s => !assignedIds.has(s.id));
+      
+      return {
+        ...cls,
+        students: [...newStudents, ...remainingStudents]
+      };
+    }));
   };
 
   const updateAttendance = (studentId: string, status: AttendanceStatus, date: string = currentDate) => {
@@ -81,6 +105,7 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
       updateAttendance,
       importRoster,
       deleteClass,
+      updateClassStudentsOrder,
       getCurrentClass,
       setClasses
     }}>

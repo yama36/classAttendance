@@ -3,12 +3,10 @@ import { useAttendance } from '@/contexts/AttendanceContext';
 import { cn, getStatusLabel } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { RosterImportModal } from './RosterImportModal';
 import { ClassManagerModal } from './ClassManagerModal';
 
 export function Sidebar() {
   const { getCurrentClass, currentDate, classes, currentClassId, setCurrentClassId } = useAttendance();
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isManagerModalOpen, setIsManagerModalOpen] = useState(false);
   const currentClass = getCurrentClass();
 
@@ -55,16 +53,6 @@ export function Sidebar() {
               ))}
             </select>
           </div>
-
-
-          <div className="pt-4 space-y-2">
-            <button
-              onClick={() => setIsImportModalOpen(true)}
-              className="w-full py-2 px-4 rounded-sm font-bold bg-[#C4A484] text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)] hover:bg-[#B09070] transition-colors text-sm"
-            >
-              名簿・座席を一括登録
-            </button>
-          </div>
         </div>
       </div>
 
@@ -109,7 +97,6 @@ export function Sidebar() {
         </div>
       </div>
 
-      <RosterImportModal open={isImportModalOpen} onOpenChange={setIsImportModalOpen} />
       <ClassManagerModal open={isManagerModalOpen} onOpenChange={setIsManagerModalOpen} />
     </div>
   );
