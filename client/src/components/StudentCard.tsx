@@ -1,3 +1,4 @@
+import { useDraggable } from '@dnd-kit/core';
 import { cn, getStatusLabel } from '@/lib/utils';
 import { AttendanceStatus } from '@/types';
 
@@ -9,10 +10,20 @@ interface StudentCardProps {
   status: AttendanceStatus;
   editMode: boolean;
   onClick?: () => void;
-  style?: React.CSSProperties;
+  className?: string;
 }
 
-export function StudentCard({ id, number, name, lastName, status, editMode, onClick, style }: StudentCardProps) {
+export function StudentCard({ id, number, name, lastName, status, editMode, onClick, className }: StudentCardProps) {
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+    id: id,
+    data: { id, number, name, lastName, status },
+    disabled: !editMode,
+  });
+
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+    zIndex: 50,
+  } : undefined;
 
   // ステータスに応じた机の色設定
   const getDeskColor = (status: AttendanceStatus) => {
@@ -41,14 +52,18 @@ export function StudentCard({ id, number, name, lastName, status, editMode, onCl
 
   return (
     <div
+      ref={setNodeRef}
+      style={style}
+      {...listeners}
+      {...attributes}
       onClick={onClick}
       className={cn(
         "relative flex flex-col items-center justify-center rounded-sm transition-all duration-200 select-none",
-        "w-full h-full", // 親グリッドセルいっぱいに広げる
-        editMode ? "cursor-pointer hover:scale-105" : "cursor-default",
-        "group"
+        "w-full h-full", 
+        editMode ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
+        "group",
+        className
       )}
-      style={{ direction: 'ltr', ...style }}
     >
       {/* 椅子 (机の上側=奥側に配置) */}
       <div className="absolute top-0 w-3/4 h-4 bg-[#8B5E3C] rounded-b-md transform -translate-y-1/2 z-0 shadow-sm"></div>
@@ -72,7 +87,7 @@ export function StudentCard({ id, number, name, lastName, status, editMode, onCl
         {/* ステータス表示（中央下） */}
         <div className="mb-2">
           <div className={cn(
-            "px-2 py-0.5 rounded-full text-md font-bold text-white shadow-sm tracking-widest transform rotate-[-2deg]",
+            "px-2 py-0.5 rounded-full text-xs font-bold text-white shadow-sm tracking-widest transform rotate-[-2deg]",
             getLabelColor(status)
           )}>
             {getStatusLabel(status)}

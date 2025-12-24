@@ -6,12 +6,12 @@ const today = format(new Date(), 'yyyy-MM-dd');
 const createStudents = (count: number, classId: string) => {
   return Array.from({ length: count }, (_, i) => ({
     id: `student-${classId}-${i + 1}`,
-    number: i + 1,
-    name: `生徒 ${i + 1}`,
+      number: i + 1,
+      name: `生徒 ${i + 1}`,
     lastName: `生徒${i + 1}`, // SP表示用（番号付きで表示させるため）
-    records: [
-      { date: today, status: 'present' }
-    ]
+      records: [
+        { date: today, status: 'present' }
+      ]
   }));
 };
 

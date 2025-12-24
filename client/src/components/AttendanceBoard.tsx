@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
+import { DndContext, DragOverlay, DragStartEvent, DragEndEvent, useSensor, useSensors, MouseSensor, TouchSensor } from '@dnd-kit/core';
 import { useAttendance } from '@/contexts/AttendanceContext';
 import { StudentCard } from './StudentCard';
 import { DropZone } from './DropZone';
@@ -11,8 +12,15 @@ const MIN_CARD_WIDTH = 120;
 const MIN_CARD_HEIGHT = 90;
 
 export function AttendanceBoard() {
-  const { getCurrentClass, currentDate, updateAttendance, viewMode } = useAttendance();
+  const { getCurrentClass, currentDate, updateAttendance } = useAttendance();
   const currentClass = getCurrentClass();
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeData, setActiveData] = useState<any>(null);
+
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 10 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } })
+  );
 
   const gridStyle = useMemo(() => {
     const count = currentClass?.students.length || 0;
@@ -29,9 +37,26 @@ export function AttendanceBoard() {
 
   if (!currentClass) return <div>クラスが選択されていません</div>;
 
-  const handleCardClick = (studentId: string, currentStatus: AttendanceStatus) => {
-    if (viewMode === 'student') return;
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+    setActiveData(event.active.data.current);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
     
+    if (over && active.id) {
+      const studentId = active.id as string;
+      const newStatus = over.id as AttendanceStatus;
+      
+      updateAttendance(studentId, newStatus);
+    }
+    
+    setActiveId(null);
+    setActiveData(null);
+  };
+
+  const handleCardClick = (studentId: string, currentStatus: AttendanceStatus) => {
     const statuses: AttendanceStatus[] = ['present', 'absent', 'late', 'leaveEarly'];
     const currentIndex = statuses.indexOf(currentStatus);
     const nextStatus = statuses[(currentIndex + 1) % statuses.length];
@@ -52,9 +77,13 @@ export function AttendanceBoard() {
     leaveEarly: currentClass.students.filter(s => getStudentStatus(s.id) === 'leaveEarly').length,
   };
 
+  // 教師視点（右下起点）にするため、グリッド全体を180度回転させる
+  // データ自体の並び替えは行わない
+  const students = currentClass.students;
+
   return (
-    <div className="flex flex-col h-full gap-6 font-['Yomogi']">
-      {viewMode === 'teacher' && (
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <div className="flex flex-col h-full gap-6 font-['Yomogi']">
         <div className="grid grid-cols-4 gap-4 shrink-0">
           <DropZone 
             id="present" 
@@ -81,67 +110,22 @@ export function AttendanceBoard() {
             colorClass=""
           />
         </div>
-      )}
 
-      <div className={cn(
-        "flex-1 bg-white rounded-sm p-6 shadow-md relative transition-all duration-500 overflow-auto",
-        viewMode === 'teacher' ? "rotate-180" : ""
-      )}>
-        {/* グリッドコンテナ */}
-        <div 
-          className={cn(
-            "grid gap-4 h-full", 
-            viewMode === 'teacher' ? "rotate-180" : ""
-          )}
-          style={{
-            gridTemplateColumns: gridStyle.templateCols,
-            gridTemplateRows: gridStyle.templateRows,
-          }}
-        >
-          {(() => {
-            if (viewMode === 'teacher') {
-              // 教師モード: 右下から左に向かって配置
-              // スプレッドシートの関数: INDEX($A$1:$F$7, 8-ROW(A1), 7-COLUMN(A1))
-              // 1. 学生リストを行ごとに分割（正順）: [[1,2,3,4,5,6], [7,8,9,10,11,12], ...]
-              // 2. 各行を逆順にする（列を逆順）: [[6,5,4,3,2,1], [12,11,10,9,8,7], ...]
-              // 3. 行の順序を逆順にする（下から上）: [[40,39,38,37], [36,35,34,33,32,31], ...]
-              // 4. フラット化して、グリッドに配置（direction: rtlなしで直接配置）
-              const rows: typeof currentClass.students[] = [];
-              for (let i = 0; i < currentClass.students.length; i += FIXED_COLS) {
-                rows.push(currentClass.students.slice(i, i + FIXED_COLS));
-              }
-              // 各行を逆順にして、行の順序も逆順にする
-              const reversedRows = rows.map(row => row.slice().reverse()).reverse();
-              // グリッドの位置を直接計算して配置（右から左、下から上）
-              const totalRows = gridStyle.rows;
-              return reversedRows.flatMap((row, rowIndex) => {
-                // rowIndexは逆順の行インデックス（0が最下行）
-                const actualRow = totalRows - rowIndex; // 実際の行番号（下から上）
-                return row.map((student, colIndex) => {
-                  // colIndexは逆順の列インデックス（0が右端）
-                  const actualCol = FIXED_COLS - colIndex; // 実際の列番号（右から左）
-                  return (
-                    <StudentCard
-                      key={student.id}
-                      id={student.id}
-                      number={student.number}
-                      name={student.name}
-                      lastName={student.lastName}
-                      status={getStudentStatus(student.id)}
-                      editMode={true}
-                      onClick={() => handleCardClick(student.id, getStudentStatus(student.id))}
-                      style={{
-                        gridRow: actualRow,
-                        gridColumn: actualCol,
-                      }}
-                    />
-                  );
-                });
-              });
-            }
-            
-            // 生徒モード: 正順で表示（左上から）
-            return currentClass.students.map((student) => (
+        <div className={cn(
+          "flex-1 bg-white rounded-sm p-6 shadow-md relative transition-all duration-500 overflow-auto"
+        )}>
+          {/* グリッドコンテナ */}
+          <div 
+            className={cn(
+              "grid gap-4 h-full",
+              "rotate-180" // グリッド全体を180度回転（右下が起点になる）
+            )}
+            style={{
+              gridTemplateColumns: gridStyle.templateCols,
+              gridTemplateRows: gridStyle.templateRows,
+            }}
+          >
+            {students.map((student) => (
               <StudentCard
                 key={student.id}
                 id={student.id}
@@ -149,13 +133,35 @@ export function AttendanceBoard() {
                 name={student.name}
                 lastName={student.lastName}
                 status={getStudentStatus(student.id)}
-                editMode={false}
+                editMode={true}
                 onClick={() => handleCardClick(student.id, getStudentStatus(student.id))}
+                className="rotate-180" // カードの向きを元に戻す
               />
-            ));
-          })()}
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+
+      <DragOverlay>
+        {activeId && activeData ? (
+          <div 
+            className="opacity-90 rotate-3 scale-105" 
+            style={{ 
+              width: `${MIN_CARD_WIDTH}px`,
+              height: `${MIN_CARD_HEIGHT}px`
+            }}
+          >
+            <StudentCard
+              id={activeId}
+              number={activeData.number}
+              name={activeData.name}
+              lastName={activeData.lastName}
+              status={activeData.status}
+              editMode={true}
+            />
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 }
