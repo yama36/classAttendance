@@ -77,9 +77,9 @@ export function AttendanceBoard() {
     leaveEarly: currentClass.students.filter(s => getStudentStatus(s.id) === 'leaveEarly').length,
   };
 
-  // 教師視点（右下起点）にするため、データを逆順にする
-  // [...array].reverse() で元の配列を変更せずにコピーを逆順にする
-  const reversedStudents = [...currentClass.students].reverse();
+  // 教師視点（右下起点）にするため、グリッド全体を180度回転させる
+  // データ自体の並び替えは行わない
+  const students = currentClass.students;
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -117,14 +117,15 @@ export function AttendanceBoard() {
           {/* グリッドコンテナ */}
           <div 
             className={cn(
-              "grid gap-4 h-full"
+              "grid gap-4 h-full",
+              "rotate-180" // グリッド全体を180度回転（右下が起点になる）
             )}
             style={{
               gridTemplateColumns: gridStyle.templateCols,
               gridTemplateRows: gridStyle.templateRows,
             }}
           >
-            {reversedStudents.map((student) => (
+            {students.map((student) => (
               <StudentCard
                 key={student.id}
                 id={student.id}
@@ -134,6 +135,7 @@ export function AttendanceBoard() {
                 status={getStudentStatus(student.id)}
                 editMode={true}
                 onClick={() => handleCardClick(student.id, getStudentStatus(student.id))}
+                className="rotate-180" // カードの向きを元に戻す
               />
             ))}
           </div>

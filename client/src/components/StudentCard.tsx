@@ -10,9 +10,10 @@ interface StudentCardProps {
   status: AttendanceStatus;
   editMode: boolean;
   onClick?: () => void;
+  className?: string;
 }
 
-export function StudentCard({ id, number, name, lastName, status, editMode, onClick }: StudentCardProps) {
+export function StudentCard({ id, number, name, lastName, status, editMode, onClick, className }: StudentCardProps) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: id,
     data: { id, number, name, lastName, status },
@@ -60,7 +61,8 @@ export function StudentCard({ id, number, name, lastName, status, editMode, onCl
         "relative flex flex-col items-center justify-center rounded-sm transition-all duration-200 select-none",
         "w-full h-full", 
         editMode ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
-        "group"
+        "group",
+        className
       )}
     >
       {/* 椅子 (机の上側=奥側に配置) */}
