@@ -34,3 +34,18 @@ export const getStatusLabel = (status: string) => {
       return status;
   }
 };
+
+export const getShortStatusLabel = (status: string) => {
+  switch (status) {
+    case "present":
+      return ""; // 出席は表示なし（または〇など）
+    case "absent":
+      return "欠";
+    case "late":
+      return "遅";
+    case "leaveEarly":
+      return "早";
+    default:
+      return "";
+  }
+};

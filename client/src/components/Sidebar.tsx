@@ -4,6 +4,7 @@ import { cn, getStatusLabel } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { ClassManagerModal } from './ClassManagerModal';
+import { DropZone } from './DropZone';
 
 export function Sidebar() {
   const { getCurrentClass, currentDate, classes, currentClassId, setCurrentClassId } = useAttendance();
@@ -18,6 +19,13 @@ export function Sidebar() {
     return record?.status || 'present';
   };
 
+  const counts = {
+    present: currentClass.students.filter(s => getStudentStatus(s.id) === 'present').length,
+    absent: currentClass.students.filter(s => getStudentStatus(s.id) === 'absent').length,
+    late: currentClass.students.filter(s => getStudentStatus(s.id) === 'late').length,
+    leaveEarly: currentClass.students.filter(s => getStudentStatus(s.id) === 'leaveEarly').length,
+  };
+
   const absentStudents = currentClass.students.filter(s => {
     const status = getStudentStatus(s.id);
     return status !== 'present';
@@ -26,7 +34,7 @@ export function Sidebar() {
   return (
     <div className="w-full md:w-80 flex flex-col gap-6 h-full font-['Yomogi']">
       {/* Class Selector & Date - Blackboard style card */}
-      <div className="bg-[#6B7F56] p-6 rounded-sm shadow-md text-white relative overflow-hidden">
+      <div className="bg-[#6B7F56] p-6 rounded-sm shadow-md text-white relative overflow-hidden shrink-0">
         {/* Chalk dust effect */}
         <div className="absolute inset-0 bg-white opacity-5 pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\' opacity=\'0.5\'/%3E%3C/svg%3E")' }}></div>
         
@@ -54,6 +62,38 @@ export function Sidebar() {
             </select>
           </div>
         </div>
+      </div>
+
+      {/* DropZone Area (PC only) - Compact Layout */}
+      <div className="grid grid-cols-4 gap-2">
+        <DropZone 
+          id="present" 
+          label="出席" 
+          count={counts.present}
+          colorClass=""
+          compact={true}
+        />
+        <DropZone 
+          id="absent" 
+          label="欠席" 
+          count={counts.absent}
+          colorClass=""
+          compact={true}
+        />
+        <DropZone 
+          id="late" 
+          label="遅刻" 
+          count={counts.late}
+          colorClass=""
+          compact={true}
+        />
+        <DropZone 
+          id="leaveEarly" 
+          label="早退" 
+          count={counts.leaveEarly}
+          colorClass=""
+          compact={true}
+        />
       </div>
 
       {/* Absentee List - Notebook paper style */}

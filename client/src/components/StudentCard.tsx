@@ -1,5 +1,5 @@
 import { useDraggable } from '@dnd-kit/core';
-import { cn, getStatusLabel } from '@/lib/utils';
+import { cn, getStatusLabel, getShortStatusLabel } from '@/lib/utils';
 import { AttendanceStatus } from '@/types';
 
 interface StudentCardProps {
@@ -65,37 +65,52 @@ export function StudentCard({ id, number, name, lastName, status, editMode, onCl
         className
       )}
     >
-      {/* 椅子 (机の上側=奥側に配置) */}
-      <div className="absolute top-0 w-3/4 h-4 bg-[#8B5E3C] rounded-b-md transform -translate-y-1/2 z-0 shadow-sm"></div>
+      {/* 椅子 (机の上側=奥側に配置) - SPでは非表示 */}
+      <div className="hidden md:block absolute top-0 w-3/4 h-4 bg-[#8B5E3C] rounded-b-md transform -translate-y-1/2 z-0 shadow-sm"></div>
 
       {/* 机本体 */}
       <div className={cn(
-        "relative w-full h-full rounded-sm shadow-md flex flex-col items-center justify-between z-10 overflow-hidden border-b-4 border-black/10 py-2",
+        "relative w-full h-full rounded-sm shadow-md flex flex-col items-center justify-center md:justify-between z-10 overflow-hidden",
+        "py-0.5 md:py-2", // パディング調整
+        "border-b-2 md:border-b-4 border-black/10", // ボーダー調整
         getDeskColor(status)
       )}>
         
-        {/* 上部余白と名前 */}
-        <div className="flex-1 flex items-center justify-center w-full px-1">
-          <div className="text-white font-bold text-lg tracking-wider drop-shadow-md text-center leading-tight w-full truncate">
-            {/* SP: 番号.姓 */}
-            <span className="md:hidden">{number}.{familyName}</span>
-            {/* PC: 番号.フルネーム */}
-            <span className="hidden md:inline">{number}.{name}</span>
+        {/* 名前表示エリア */}
+        <div className="flex-none md:flex-1 flex items-center justify-center w-full px-0.5 md:px-1">
+          
+          {/* SP: 名字のみ、極小サイズ */}
+          <div className="md:hidden flex flex-col items-center justify-center leading-none text-white font-bold drop-shadow-sm w-full overflow-hidden">
+            <span className="text-[9px] opacity-90">{number}</span>
+            <span className="text-[10px] w-full text-center truncate">{familyName}</span>
+          </div>
+
+          {/* PC: 番号.フルネーム */}
+          <div className="hidden md:block text-white font-bold text-lg tracking-wider drop-shadow-md text-center leading-tight w-full truncate">
+            {number}.{name}
           </div>
         </div>
 
-        {/* ステータス表示（中央下） */}
-        <div className="mb-2">
+        {/* ステータス表示 */}
+        <div className="flex-none md:mb-2 w-full flex justify-center items-center">
+          {/* SP: 短縮ラベル (例: 欠) */}
+          {status !== 'present' && (
+            <div className={cn(
+              "md:hidden text-[9px] font-bold text-white px-1 py-0.5 rounded-sm leading-none mt-0.5",
+              "bg-black/20 backdrop-blur-sm"
+            )}>
+              {getShortStatusLabel(status)}
+            </div>
+          )}
+
+          {/* PC: 通常ラベル */}
           <div className={cn(
-            "px-2 py-0.5 rounded-full text-xs font-bold text-white shadow-sm tracking-widest transform rotate-[-2deg]",
+            "hidden md:block px-2 py-0.5 rounded-full text-xs font-bold text-white shadow-sm tracking-widest transform rotate-[-2deg]",
             getLabelColor(status)
           )}>
             {getStatusLabel(status)}
           </div>
         </div>
-
-        {/* 机のディテール：下部の溝（ペントレイ） */}
-        <div className="w-1/2 h-1.5 bg-black/10 rounded-full mb-1"></div>
       </div>
     </div>
   );

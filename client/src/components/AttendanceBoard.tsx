@@ -1,5 +1,4 @@
-import { useState, useMemo } from 'react';
-import { DndContext, DragOverlay, DragStartEvent, DragEndEvent, useSensor, useSensors, MouseSensor, TouchSensor } from '@dnd-kit/core';
+import { useMemo } from 'react';
 import { useAttendance } from '@/contexts/AttendanceContext';
 import { StudentCard } from './StudentCard';
 import { DropZone } from './DropZone';
@@ -8,19 +7,12 @@ import { cn } from '@/lib/utils';
 
 // グリッド設定定数
 const FIXED_COLS = 6;
-const MIN_CARD_WIDTH = 120;
-const MIN_CARD_HEIGHT = 90;
+const MIN_CARD_WIDTH = 0; // SP対応のため0にする（親コンテナに合わせて縮小）
+const MIN_CARD_HEIGHT = 0; // SP対応のため0にする
 
 export function AttendanceBoard() {
   const { getCurrentClass, currentDate, updateAttendance } = useAttendance();
   const currentClass = getCurrentClass();
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [activeData, setActiveData] = useState<any>(null);
-
-  const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 10 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } })
-  );
 
   const gridStyle = useMemo(() => {
     const count = currentClass?.students.length || 0;
@@ -36,25 +28,6 @@ export function AttendanceBoard() {
   }, [currentClass?.students.length]);
 
   if (!currentClass) return <div>クラスが選択されていません</div>;
-
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string);
-    setActiveData(event.active.data.current);
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    
-    if (over && active.id) {
-      const studentId = active.id as string;
-      const newStatus = over.id as AttendanceStatus;
-      
-      updateAttendance(studentId, newStatus);
-    }
-    
-    setActiveId(null);
-    setActiveData(null);
-  };
 
   const handleCardClick = (studentId: string, currentStatus: AttendanceStatus) => {
     const statuses: AttendanceStatus[] = ['present', 'absent', 'late', 'leaveEarly'];
@@ -78,90 +51,67 @@ export function AttendanceBoard() {
   };
 
   // 教師視点（右下起点）にするため、グリッド全体を180度回転させる
-  // データ自体の並び替えは行わない
   const students = currentClass.students;
 
   return (
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="flex flex-col h-full gap-6 font-['Yomogi']">
-        <div className="grid grid-cols-4 gap-4 shrink-0">
-          <DropZone 
-            id="present" 
-            label="出席" 
-            count={counts.present}
-            colorClass=""
-          />
-          <DropZone 
-            id="absent" 
-            label="欠席" 
-            count={counts.absent}
-            colorClass=""
-          />
-          <DropZone 
-            id="late" 
-            label="遅刻" 
-            count={counts.late}
-            colorClass=""
-          />
-          <DropZone 
-            id="leaveEarly" 
-            label="早退" 
-            count={counts.leaveEarly}
-            colorClass=""
-          />
-        </div>
-
-        <div className={cn(
-          "flex-1 bg-white rounded-sm p-6 shadow-md relative transition-all duration-500 overflow-auto"
-        )}>
-          {/* グリッドコンテナ */}
-          <div 
-            className={cn(
-              "grid gap-4 h-full",
-              "rotate-180" // グリッド全体を180度回転（右下が起点になる）
-            )}
-            style={{
-              gridTemplateColumns: gridStyle.templateCols,
-              gridTemplateRows: gridStyle.templateRows,
-            }}
-          >
-            {students.map((student) => (
-              <StudentCard
-                key={student.id}
-                id={student.id}
-                number={student.number}
-                name={student.name}
-                lastName={student.lastName}
-                status={getStudentStatus(student.id)}
-                editMode={true}
-                onClick={() => handleCardClick(student.id, getStudentStatus(student.id))}
-                className="rotate-180" // カードの向きを元に戻す
-              />
-            ))}
-          </div>
-        </div>
+    <div className="flex flex-col h-full gap-2 md:gap-6 font-['Yomogi']">
+      {/* SP時のみ上部にドロップゾーンを表示（PCではサイドバーに移動） */}
+      <div className="md:hidden grid grid-cols-4 gap-2 shrink-0">
+        <DropZone 
+          id="present" 
+          label="出席" 
+          count={counts.present}
+          colorClass=""
+        />
+        <DropZone 
+          id="absent" 
+          label="欠席" 
+          count={counts.absent}
+          colorClass=""
+        />
+        <DropZone 
+          id="late" 
+          label="遅刻" 
+          count={counts.late}
+          colorClass=""
+        />
+        <DropZone 
+          id="leaveEarly" 
+          label="早退" 
+          count={counts.leaveEarly}
+          colorClass=""
+        />
       </div>
 
-      <DragOverlay>
-        {activeId && activeData ? (
-          <div 
-            className="opacity-90 rotate-3 scale-105" 
-            style={{ 
-              width: `${MIN_CARD_WIDTH}px`,
-              height: `${MIN_CARD_HEIGHT}px`
-            }}
-          >
+      <div className={cn(
+        "flex-1 bg-white rounded-sm p-2 md:p-6 shadow-md relative transition-all duration-500 overflow-hidden"
+      )}>
+        {/* グリッドコンテナ */}
+        <div 
+          className={cn(
+            "grid gap-1 md:gap-4 h-full",
+            "rotate-180" // グリッド全体を180度回転（右下が起点になる）
+          )}
+          style={{
+            gridTemplateColumns: gridStyle.templateCols,
+            gridTemplateRows: gridStyle.templateRows,
+          }}
+        >
+          {students.map((student) => (
             <StudentCard
-              id={activeId}
-              number={activeData.number}
-              name={activeData.name}
-              lastName={activeData.lastName}
-              status={activeData.status}
+              key={student.id}
+              id={student.id}
+              number={student.number}
+              name={student.name}
+              lastName={student.lastName}
+              status={getStudentStatus(student.id)}
               editMode={true}
+              onClick={() => handleCardClick(student.id, getStudentStatus(student.id))}
+              className="rotate-180" // カードの向きを元に戻す
             />
-          </div>
-        ) : null}
-      </DragOverlay>
-    </DndContext>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
